@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: JSON Basic Authentication
- * Description: Basic Authentication handler for the JSON API, used for development and debugging purposes
+ * Description: Basic Authentication handler for the JSON API, used for development and debugging purposes. If you use CGI or FCGI you may need to edit your .htaccess file, see https://github.com/WP-API/Basic-Auth/issues/1
  * Author: WordPress API Team
  * Author URI: https://github.com/WP-API
  * Version: 0.1
