@@ -4,7 +4,7 @@
  * Description: Basic Authentication handler for the JSON API, used for development and debugging purposes. If you use CGI or FCGI you may need to edit your .htaccess file, see https://github.com/WP-API/Basic-Auth/issues/1
  * Author: WordPress API Team
  * Author URI: https://github.com/WP-API
- * Version: 0.1
+ * Version: 0.2
  * Plugin URI: https://github.com/WP-API/Basic-Auth
  */
 
@@ -85,3 +85,14 @@ function json_basic_auth_error( $error ) {
 }
 add_filter( 'json_authentication_errors', 'json_basic_auth_error' );
 add_filter( 'rest_authentication_errors', 'json_basic_auth_error' );
+
+function json_basic_auth_index( $response_object ) {
+	if ( empty( $response_object->data['authentication'] ) ) {
+		$response_object->data['authentication'] = array();
+	}
+	$response_object->data['authentication']['basic_auth'] = array(
+		'version' => '0.2',
+	);
+	return $response_object;
+}
+add_filter( 'rest_index', 'json_basic_auth_index' );
