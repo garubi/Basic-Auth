@@ -30,5 +30,17 @@ $args = array(
 );
 ```
 
+##CGI and Fast-CGI Workaround
+If your webserver is setup to use CGI or Fast-CGI (FCGI) then the HTTP Authorization header is blocked by default, which prevents this plugin from successfully authenticating your requests. To workaround this, you must edit your `.htaccess` file in the wordpress root folder (in the same folder as your wp-config.php file). Find the line that says
+
+`RewriteRule ^index\.php$ - [L]`
+
+and replace it with 
+
+`RewriteRule ^index\.php$ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]`
+
+This will re-add the HTTP Authorization header and allow this plugin to authenticate your requests.
+
+(Note: this workaround only works on this version of the Basic Auth plugin. The WP-API/Basic-Auth plugin doesn't support this workaround)
 [oauth]: https://github.com/WP-API/OAuth1
 [RFC2617]: https://tools.ietf.org/html/rfc2617
