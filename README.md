@@ -23,24 +23,33 @@ curl --user admin:password http://example.com/wp-json/
 ### WP_Http
 
 ```php
-$args = array(
-	'headers' => array(
-		'Authorization' => 'Basic ' . base64_encode( $username . ':' . $password ),
-	),
+wp_remote_request(
+    'http://example.com/wp-json',
+     array(
+     	'headers' => array(
+     		'Authorization' => 'Basic ' . base64_encode( $username . ':' . $password ),
+     	),
+     )
 );
 ```
 
 ##CGI and Fast-CGI Workaround
-If your webserver is setup to use CGI or Fast-CGI (FCGI) then the HTTP Authorization header is blocked by default, which prevents this plugin from successfully authenticating your requests. To workaround this, you must edit your `.htaccess` file in the wordpress root folder (in the same folder as your wp-config.php file). Find the line that says
+If you are communicating with a webserver using CGI or Fast-CGI (FCGI) then the HTTP Authorization header is blocked by default, which prevents this plugin from successfully authenticating your requests. 
 
-`RewriteRule ^index\.php$ - [L]`
+On this fork of the WP API Basic Auth plugin, you can instead pass the "Authorization" data in the query string variable `_authorization`.
+(On the original version of the WP API Basic Auth pluing, you instead need to do a more complicated fix involving modifying the .htaccess file.)
 
-and replace it with 
+So using cURL you could do the following:
 
-`RewriteRule ^index\.php$ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]`
+```sh
+curl --user admin:password http://example.com/wp-json/?_authorization=Basic base64encodedusernameandpassword
+```
 
-This will re-add the HTTP Authorization header and allow this plugin to authenticate your requests.
+Or, using the WP_Http API, you'd do
 
-(Note: this workaround only works on this version of the Basic Auth plugin. The WP-API/Basic-Auth plugin doesn't support this workaround)
-[oauth]: https://github.com/WP-API/OAuth1
-[RFC2617]: https://tools.ietf.org/html/rfc2617
+```php
+wp_remote_request(
+    'http://example.com/wp-json?_authorization=Basic ' . base64_encode( $username . ':' . $password ),
+     array()
+);
+```

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: JSON Basic Authentication
- * Description: Basic Authentication handler for the JSON API, used for development and debugging purposes. If you use CGI or FCGI you may need to edit your .htaccess file, see https://github.com/WP-API/Basic-Auth/issues/1
+ * Description: Basic Authentication handler for the JSON API, used for development and debugging purposes
  * Author: WordPress API Team
  * Author URI: https://github.com/WP-API
  * Version: 0.2
@@ -16,23 +16,32 @@ function json_basic_auth_handler( $user ) {
     if ( ! empty( $user ) ) {
         return $user;
     }
-	//account for issue where some servers remove the PHP auth headers
-	//so instead look for auth info in a custom environment variable set by rewrite rules
-	//probably in .htaccess
-    if (
-        !isset($_SERVER['PHP_AUTH_USER']) 
-        && (
-            isset($_SERVER['HTTP_AUTHORIZATION']) 
-            || isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])
-        )
-        ) {
-        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+    //account for issue where some servers remove the PHP auth headers
+    //so instead look for auth info in a custom environment variable set by rewrite rules
+    //probably in .htaccess
+    //and, as a last resort, look in the querystring
+    if( ! isset( $_SERVER['PHP_AUTH_USER'] ) ) {
+        if( isset( $_SERVER['HTTP_AUTHORIZATION'])) {
             $header = $_SERVER['HTTP_AUTHORIZATION'];
-        } else {
+        } elseif( isset( $_SERVER[ 'REDIRECT_HTTP_AUTHORIZATION' ] ) ) {
             $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        } elseif( isset( $_GET['_authorization'] ) ) {
+            $header = $_GET['_authorization'];
+            //and now remove this special header so it doesn't interfere with other parts of the request
+            unset( $_GET['authorization'] );
+        } else {
+            $header = null;
         }
         if( ! empty( $header ) ) {
-              list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', base64_decode(substr($header, 6)));
+            //make sure there's the word 'Basic ' at the start, or else it's not for us
+            if( strpos( $header, 'Basic ' ) === 0 ) {
+                $header_sans_word_basic = str_replace( 'Basic ', '', $header );
+                $auth_parts = explode( ':', base64_decode( $header_sans_word_basic ), 2 );
+                if ( is_array( $auth_parts ) && isset( $auth_parts[0], $auth_parts[1] ) ) {
+                    $_SERVER['PHP_AUTH_USER'] = $auth_parts[0];
+                    $_SERVER['PHP_AUTH_PW']   = $auth_parts[1];
+                }
+            }
         }
     }
 
@@ -71,28 +80,17 @@ function json_basic_auth_handler( $user ) {
     }
     return $user->ID;
 }
-add_filter( 'determine_current_user', 'json_basic_auth_handler', 5 );
+add_filter( 'determine_current_user', 'json_basic_auth_handler', 20 );
 
 function json_basic_auth_error( $error ) {
-	// Passthrough other errors
-	if ( ! empty( $error ) ) {
-		return $error;
-	}
+    // Passthrough other errors
+    if ( ! empty( $error ) ) {
+        return $error;
+    }
 
-	global $wp_json_basic_auth_error;
+    global $wp_json_basic_auth_error;
 
-	return $wp_json_basic_auth_error;
+    return $wp_json_basic_auth_error;
 }
 add_filter( 'json_authentication_errors', 'json_basic_auth_error' );
 add_filter( 'rest_authentication_errors', 'json_basic_auth_error' );
-
-function json_basic_auth_index( $response_object ) {
-	if ( empty( $response_object->data['authentication'] ) ) {
-		$response_object->data['authentication'] = array();
-	}
-	$response_object->data['authentication']['basic_auth'] = array(
-		'version' => '0.2',
-	);
-	return $response_object;
-}
-add_filter( 'rest_index', 'json_basic_auth_index' );
