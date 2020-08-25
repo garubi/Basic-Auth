@@ -6,6 +6,7 @@
  * Author URI: https://github.com/WP-API, https://github.com/eventespresso/Basic-Auth, https://github.com/garubi/Basic-Auth
  * Version: 0.2
  * Plugin URI: https://github.com/WP-API/Basic-Auth
+ * GitHub Plugin URI: https://github.com/garubi/Basic-Auth
  */
 
 function json_basic_auth_handler( $user ) {
