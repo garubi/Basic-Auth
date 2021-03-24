@@ -36,18 +36,30 @@ wp_remote_request(
 ## CGI and Fast-CGI Workaround
 If you are communicating with a webserver using CGI or Fast-CGI (FCGI) then the HTTP Authorization header is blocked by default, which prevents this plugin from successfully authenticating your requests. 
 
-On this fork of the WP API Basic Auth plugin, you can instead pass the "Authorization" data in the query string variable `_authorization`.
-(On the original version of the WP API Basic Auth pluing, you instead need to do a more complicated fix involving modifying the .htaccess file.)
+On this fork of the WP API Basic Auth plugin, you have two choices to authenticate in this case: add a line in .htaccess file o pass the "Authorization" data in a query string variable.
+
+### Workaround 1: .htaccess
+Add the following line in your .htaccess file, just below the `RewriteEngine On` added by WordPress:
+
+```sh
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
+```
+
+You are done, the plugin take care of the rest.
+
+### Workaround 2: 
+Pass the "Authorization" data in the query string variable `_authorization`.
+
 Here are some examples of how to use this version of the Basic Auth plugin authenticating through the query string.
 
-### cURL
+#### cURL
 
 ```sh
 curl --user admin:password http://example.com/wp-json/?_authorization=Basic base64encodedusernameandpassword
 ```
 where base64encodedusernameandpassword is the user's username, a colon, and their password concatenated together and theenn base 64 encoded.
 
-### WP_Http
+#### WP_Http
 
 ```php
 wp_remote_request(
